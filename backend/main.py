@@ -68,15 +68,32 @@ SECTORS = ["Technology", "Healthcare", "Finance", "Consumer", "Energy"]
 MARKET_REGIMES = ["Bull", "Bear", "Recovery", "Sideways"]
 
 # ─── Model Loading ────────────────────────────────────────────────────────────
-MODEL_DIR = os.path.join(os.path.dirname(__file__), "..", "models")
+def _resolve_model_dir():
+    base = os.path.dirname(__file__)
+    env_dir = os.getenv("MODEL_DIR")
+    candidates = [
+        env_dir,
+        os.path.join(base, "models"),
+        os.path.join(base, "..", "models"),
+        os.path.join(base, "..", "model"),
+        "/app/models",
+    ]
+    for d in candidates:
+        if d and os.path.isdir(d):
+            return os.path.abspath(d)
+    return None
 
 def load_artifacts():
     scaler = encoder = model = None
+    model_dir = _resolve_model_dir()
     try:
-        scaler  = joblib.load(os.path.join(MODEL_DIR, "scaler.pkl"))
-        encoder = joblib.load(os.path.join(MODEL_DIR, "label_encoder.pkl"))
-        model   = joblib.load(os.path.join(MODEL_DIR, "best_model.pkl"))
-        print("✅ ML artifacts loaded successfully")
+        if model_dir:
+            scaler  = joblib.load(os.path.join(model_dir, "scaler.pkl"))
+            encoder = joblib.load(os.path.join(model_dir, "label_encoder.pkl"))
+            model   = joblib.load(os.path.join(model_dir, "best_model.pkl"))
+            print(f"✅ ML artifacts loaded successfully from {model_dir}")
+        else:
+            raise FileNotFoundError("Model directory not found")
     except Exception as e:
         print(f"⚠️  ML artifacts not found — running in demo mode: {e}")
     return model, scaler, encoder
