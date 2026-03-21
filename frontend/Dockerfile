@@ -24,4 +24,6 @@ COPY nginx.conf /etc/nginx/templates/default.conf.template
 ENV PORT=80
 EXPOSE $PORT
 
-CMD ["/bin/sh", "-c", "envsubst '$PORT' < /etc/nginx/templates/default.conf.template > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"]
+# Standard Nginx Alpine entrypoint already handles envsubst for files in /etc/nginx/templates/
+# We simplify the CMD to ensure it starts correctly and binds to $PORT
+CMD ["nginx", "-g", "daemon off;"]
