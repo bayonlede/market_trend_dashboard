@@ -107,10 +107,10 @@ export default function Dashboard() {
       {/* Stat cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <StatCard label="S&P 500" value={overview?.sp500?.value?.toLocaleString() ?? '—'}
-          sub={overview ? `${overview.sp500.change_pct >= 0 ? '+' : ''}${overview.sp500.change_pct}%` : ''}
+          sub={overview?.sp500 ? `${overview.sp500.change_pct >= 0 ? '+' : ''}${overview.sp500.change_pct}%` : ''}
           accent={overview?.sp500?.change_pct >= 0 ? 'text-[#00E5A0]' : 'text-[#FF4D6A]'} />
         <StatCard label="NASDAQ" value={overview?.nasdaq?.value?.toLocaleString() ?? '—'}
-          sub={overview ? `${overview.nasdaq.change_pct >= 0 ? '+' : ''}${overview.nasdaq.change_pct}%` : ''}
+          sub={overview?.nasdaq ? `${overview.nasdaq.change_pct >= 0 ? '+' : ''}${overview.nasdaq.change_pct}%` : ''}
           accent={overview?.nasdaq?.change_pct >= 0 ? 'text-[#00E5A0]' : 'text-[#FF4D6A]'} />
         <StatCard label="VIX Fear Index" value={overview?.vix?.value ?? '—'}
           sub={overview?.vix?.label} accent="text-[#F5A623]" />
