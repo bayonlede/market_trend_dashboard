@@ -80,8 +80,8 @@ function StockRow({ s, rank }) {
 }
 
 export default function Dashboard() {
-  const { data: overview } = useQuery({ queryKey: ['overview'], queryFn: fetchMarketOverview, refetchInterval: 60_000 })
-  const { data: stocksData } = useQuery({ queryKey: ['stocks-dash'], queryFn: () => fetchStocks({ sort_by: 'volume', limit: 10 }) })
+  const { data: overview, error: ovError } = useQuery({ queryKey: ['overview'], queryFn: fetchMarketOverview, refetchInterval: 60_000 })
+  const { data: stocksData, error: stError } = useQuery({ queryKey: ['stocks-dash'], queryFn: () => fetchStocks({ sort_by: 'volume', limit: 10 }) })
   const { data: sectorData } = useQuery({ queryKey: ['sector-perf'], queryFn: fetchSectorPerformance })
   const { data: topData }    = useQuery({ queryKey: ['top-perf'],    queryFn: fetchTopPerformers })
 
@@ -89,8 +89,21 @@ export default function Dashboard() {
   const sectors = sectorData?.data   ?? []
   const topList = topData?.top?.slice(0, 5) ?? []
 
+  const hasError = ovError || stError
+
   return (
     <div className="p-5 space-y-5">
+      {/* Connectivity Alert */}
+      {hasError && (
+        <div className="bg-[#FF4D6A22] border border-[#FF4D6A44] rounded-xl p-4 flex flex-col gap-2">
+          <p className="text-sm font-semibold text-[#FF4D6A]">Connectivity Issue Detected</p>
+          <p className="text-xs text-[#8899BB]">
+            The frontend is unable to reach the backend at <code className="bg-[#111620] px-1 rounded">{import.meta.env.VITE_API_URL || 'http://localhost:8000'}</code>.
+            Ensure your backend is running and the <code className="bg-[#111620] px-1 rounded">VITE_API_URL</code> environment variable is set correctly in Railway.
+          </p>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

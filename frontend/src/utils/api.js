@@ -3,7 +3,27 @@ import axios from 'axios'
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000'
 const BASE = BASE_URL.replace(/\/$/, '')
 
-const api = axios.create({ baseURL: BASE, timeout: 10_000 })
+const api = axios.create({ 
+  baseURL: BASE, 
+  timeout: 20_000,
+  headers: {
+    'Accept': 'application/json',
+  }
+})
+
+// Log connectivity issues to help debugging
+api.interceptors.response.use(
+  r => r,
+  e => {
+    console.error('API Error:', {
+      url: e.config?.url,
+      baseURL: e.config?.baseURL,
+      status: e.response?.status,
+      message: e.message
+    })
+    return Promise.reject(e)
+  }
+)
 
 export const fetchMarketOverview      = () => api.get('/api/market/overview').then(r => r.data)
 export const fetchStocks              = (params) => api.get('/api/stocks', { params }).then(r => r.data)
