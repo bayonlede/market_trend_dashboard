@@ -4,7 +4,7 @@ A fully interactive alternative front-end built with Streamlit.
 Run:  streamlit run streamlit_app/app.py
 """
 
-# import os
+import os
 import streamlit as st
 import pandas as pd
 import numpy as np
@@ -23,8 +23,8 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 # Reads from Railway env var, falls back to localhost for local dev
-# API_BASE = os.environ.get("API_BASE_URL", "http://localhost:8000")
-API_BASE = "http://localhost:8000"
+API_BASE = os.environ.get("API_BASE_URL", "http://localhost:8000")
+# API_BASE = "http://localhost:8000"
 
 # ─── Custom CSS ───────────────────────────────────────────────────────────────
 st.markdown("""
