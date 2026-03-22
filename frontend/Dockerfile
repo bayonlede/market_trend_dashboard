@@ -1,10 +1,27 @@
+# Stage 1: Build the React application
+FROM node:20-alpine AS build
+
+WORKDIR /app
+
+# Copy package management files
+COPY package.json package-lock.json* ./
+
+# Install dependencies
+RUN npm install
+
+# Copy source code and build the application
+COPY . .
+RUN npm run build
+
+# Stage 2: Serve the application with Nginx
 FROM nginx:1.25-alpine
 
 # Remove default config
 RUN rm /etc/nginx/conf.d/default.conf
 
-# Copy our HTML app and nginx template
-COPY index.html /usr/share/nginx/html/index.html
+# Copy our HTML app and nginx template from build stage
+# Vite build output is in 'dist' folder by default
+COPY --from=build /app/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/templates/default.conf.template
 
 # Default values — Railway overrides PORT and BACKEND_URL at runtime via Variables tab

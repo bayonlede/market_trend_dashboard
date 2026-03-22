@@ -68,7 +68,7 @@ SECTORS = ["Technology", "Healthcare", "Finance", "Consumer", "Energy"]
 MARKET_REGIMES = ["Bull", "Bear", "Recovery", "Sideways"]
 
 # ─── Model Loading ────────────────────────────────────────────────────────────
-MODEL_DIR = os.path.join(os.path.dirname(__file__), "..", "models")
+MODEL_DIR = os.path.join(os.path.dirname(__file__), "models")
 
 def load_artifacts():
     scaler = encoder = model = None

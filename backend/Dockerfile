@@ -17,4 +17,4 @@ EXPOSE 8000
 
 # Plain shell form CMD — $PORT is injected by Railway at runtime.
 # PORT must be set to 8000 in Railway's Variables tab.
-CMD uvicorn main:app --host 0.0.0.0 --port $PORT
+CMD uvicorn main:app --host "::" --port $PORT
