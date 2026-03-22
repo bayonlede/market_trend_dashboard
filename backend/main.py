@@ -308,6 +308,45 @@ def volume_distribution():
         for s, v in g.items()
     ]}
 
+
+@app.get("/api/analytics/sector-volume-kpi")
+def sector_volume_kpi():
+    """
+    Total and average volume by sector - matches the notebook's Trading Volume Patterns
+    section (Cell 49: new_master_df.groupby('sector')['volume'].mean()).
+    Notebook finding: Energy > Technology > Finance > Consumer ~ Healthcare
+    """
+    if DF.empty:
+        # Fallback demo data matching notebook sector order
+        return {"data": [
+            {"sector": "Energy",     "avg_volume": 22800000, "total_volume": 16644000000, "pct": 21.8, "rank": 1},
+            {"sector": "Technology", "avg_volume": 21900000, "total_volume": 15987000000, "pct": 21.0, "rank": 2},
+            {"sector": "Finance",    "avg_volume": 21500000, "total_volume": 15695000000, "pct": 20.6, "rank": 3},
+            {"sector": "Consumer",   "avg_volume": 19500000, "total_volume": 14235000000, "pct": 18.7, "rank": 4},
+            {"sector": "Healthcare", "avg_volume": 18900000, "total_volume": 13797000000, "pct": 18.1, "rank": 5},
+        ]}
+
+    g = DF.groupby("sector")["volume"].agg(
+        avg_volume="mean",
+        total_volume="sum",
+    ).reset_index()
+
+    total_all = float(g["total_volume"].sum())
+    g["pct"] = (g["total_volume"] / total_all * 100).round(1)
+    g = g.sort_values("avg_volume", ascending=False).reset_index(drop=True)
+    g["rank"] = g.index + 1
+
+    return {"data": [
+        {
+            "sector":       str(r["sector"]),
+            "avg_volume":   int(r["avg_volume"]),
+            "total_volume": int(r["total_volume"]),
+            "pct":          float(r["pct"]),
+            "rank":         int(r["rank"]),
+        }
+        for _, r in g.iterrows()
+    ]}
+
 @app.get("/api/analytics/market-index-correlation")
 def market_index_correlation():
     if DF.empty:

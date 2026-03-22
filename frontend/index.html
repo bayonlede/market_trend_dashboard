@@ -175,6 +175,31 @@ input[type=range]{position:absolute;inset:0;width:100%;opacity:0;cursor:pointer;
 .run-btn:hover{opacity:.88}
 .back-btn{font-size:11.5px;color:var(--sub);cursor:pointer;display:inline-flex;align-items:center;gap:4px;margin-bottom:14px;transition:color .13s}
 .back-btn:hover{color:var(--text)}
+
+/* ── Sector Volume KPI Grid ────────────────────────────── */
+.kpi-grid{
+  display:grid;
+  grid-template-columns:repeat(5,1fr);
+  gap:10px;
+  margin-bottom:16px;
+}
+.kpi-card{
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:14px 16px;
+  transition:transform .18s, border-color .18s;
+  cursor:default;
+}
+.kpi-card:hover{
+  transform:translateY(-2px);
+}
+@media(max-width:900px){
+  .kpi-grid{grid-template-columns:repeat(3,1fr)}
+}
+@media(max-width:600px){
+  .kpi-grid{grid-template-columns:1fr 1fr}
+}
 </style>
 </head>
 <body style="display:flex;flex-direction:column;height:100vh">
@@ -420,18 +445,58 @@ function renderPage() {
 
 // ─── DASHBOARD ───────────────────────────────────────────────────────────────
 async function renderDashboard() {
-  const [ov, stocksData, sectorData, topData] = await Promise.all([
+  const [ov, stocksData, sectorData, topData, volKpi] = await Promise.all([
     S.cache.overview ? Promise.resolve(S.cache.overview) : apiFetch('/api/market/overview'),
     apiFetch('/api/stocks?sort_by=volume&limit=10'),
     apiFetch('/api/analytics/sector-performance'),
     apiFetch('/api/analytics/top-performers'),
+    apiFetch('/api/analytics/sector-volume-kpi'),
   ]);
   if (ov) S.cache.overview = ov;
 
   const stocks  = stocksData?.stocks ?? [];
   const sectors = sectorData?.data   ?? [];
   const topList = topData?.top?.slice(0, 5) ?? [];
+  const volData = volKpi?.data ?? [];
   const maxAbs  = Math.max(...sectors.map(s => Math.abs(s.avg_daily_return)), 0.001);
+
+  // Sector colors matching the notebook pie chart
+  const SCOL = {
+    Technology: '#00D4FF', Finance: '#7B61FF', Healthcare: '#00E5A0',
+    Consumer: '#F5A623', Energy: '#FF4D6A',
+  };
+
+  // Format volume: 22,800,000 -> "22.8M"  or  1,200,000,000 -> "1.2B"
+  function fmtVol(v) {
+    if (v >= 1e9) return (v / 1e9).toFixed(1) + 'B';
+    if (v >= 1e6) return (v / 1e6).toFixed(1) + 'M';
+    if (v >= 1e3) return (v / 1e3).toFixed(1) + 'K';
+    return v.toString();
+  }
+
+  // Rank medal for top sector
+  const medals = ['', '#F5A623', '#8899BB', '#CD7F32', '', ''];
+
+  // Build sector volume KPI cards
+  const kpiCards = volData.map(d => {
+    const color   = SCOL[d.sector] || '#8899BB';
+    const isBest  = d.rank === 1;
+    const barW    = volData[0] ? Math.round(d.avg_volume / volData[0].avg_volume * 100) : 100;
+    const medal   = medals[d.rank] || '';
+    return `
+      <div class="kpi-card" style="border-color:${isBest ? color + '55' : 'var(--border)'}; background:${isBest ? color + '08' : 'var(--panel)'}">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <span style="font-size:9.5px;text-transform:uppercase;letter-spacing:1.5px;color:${color};font-weight:600">${d.sector}</span>
+          <span style="font-size:10px;font-family:'DM Mono',monospace;color:var(--sub)">#${d.rank}${isBest ? ' top' : ''}</span>
+        </div>
+        <div style="font-size:22px;font-family:'DM Mono',monospace;font-weight:500;color:var(--text);margin-bottom:2px">${fmtVol(d.avg_volume)}</div>
+        <div style="font-size:10px;color:var(--sub);margin-bottom:10px">avg daily vol &middot; <span style="color:${color}">${d.pct}% of total</span></div>
+        <div style="height:4px;background:var(--muted);border-radius:2px;overflow:hidden">
+          <div style="height:100%;border-radius:2px;background:${color};width:${barW}%;transition:width .6s ease"></div>
+        </div>
+        <div style="font-size:10px;color:var(--sub);margin-top:6px">Total: <span style="font-family:'DM Mono',monospace;color:var(--text)">${fmtVol(d.total_volume)}</span></div>
+      </div>`;
+  }).join('');
 
   const stockRows = stocks.map((s, i) => `
     <tr onclick="goToDetail('${s.ticker}')">
@@ -446,7 +511,7 @@ async function renderDashboard() {
 
   const sectorBars = sectors.map(s => {
     const pctW = (Math.abs(s.avg_daily_return) / maxAbs * 100).toFixed(1);
-    const sColor = SECTOR_COLORS[s.sector] || 'var(--sub)';
+    const sColor = SCOL[s.sector] || 'var(--sub)';
     return `<div class="sector-row">
       <span class="sector-name" style="color:${sColor}">${s.sector}</span>
       <div class="sector-track"><div class="sector-fill" style="width:${pctW}%;background:${sColor}"></div></div>
@@ -465,41 +530,55 @@ async function renderDashboard() {
   document.getElementById('main-content').innerHTML = `
     <div class="ph">
       <div style="display:flex;justify-content:space-between;align-items:flex-start">
-        <div><h1>Market Dashboard</h1><p>Real-time overview · ML-powered stock analytics</p></div>
+        <div><h1>Market Dashboard</h1><p>Real-time overview &middot; ML-powered stock analytics</p></div>
         <div style="display:flex;align-items:center;gap:6px;background:var(--panel);border:1px solid var(--border);border-radius:20px;padding:4px 12px">
           <div class="live-dot"></div>
           <span style="font-size:10px;color:var(--sub)">Regime:</span>
-          <span style="font-size:11px;font-weight:600;color:var(--accent)">${ov?.market_regime ?? '—'}</span>
+          <span style="font-size:11px;font-weight:600;color:var(--accent)">${ov?.market_regime ?? '&mdash;'}</span>
         </div>
       </div>
     </div>
+
+    <!-- Market index stat cards -->
     <div class="stat-grid">
       <div class="stat-card">
         <div class="stat-label">S&P 500</div>
-        <div class="stat-value">${ov?.sp500?.value?.toLocaleString() ?? '—'}</div>
+        <div class="stat-value">${ov?.sp500?.value?.toLocaleString() ?? '&mdash;'}</div>
         <div class="stat-sub" style="color:${col(ov?.sp500?.change_pct ?? 0)}">${pct(ov?.sp500?.change_pct ?? 0)} today</div>
       </div>
       <div class="stat-card">
         <div class="stat-label">NASDAQ</div>
-        <div class="stat-value">${ov?.nasdaq?.value?.toLocaleString() ?? '—'}</div>
+        <div class="stat-value">${ov?.nasdaq?.value?.toLocaleString() ?? '&mdash;'}</div>
         <div class="stat-sub" style="color:${col(ov?.nasdaq?.change_pct ?? 0)}">${pct(ov?.nasdaq?.change_pct ?? 0)} today</div>
       </div>
       <div class="stat-card">
         <div class="stat-label">VIX Fear Index</div>
-        <div class="stat-value">${ov?.vix?.value ?? '—'}</div>
+        <div class="stat-value">${ov?.vix?.value ?? '&mdash;'}</div>
         <div class="stat-sub" style="color:var(--warn)">${ov?.vix?.label ?? ''}</div>
       </div>
       <div class="stat-card">
         <div class="stat-label">10Y Treasury</div>
-        <div class="stat-value">${ov?.treasury_10y ?? '—'}%</div>
+        <div class="stat-value">${ov?.treasury_10y ?? '&mdash;'}%</div>
         <div class="stat-sub" style="color:var(--sub)">Yield</div>
       </div>
     </div>
-    <div style="display:grid;grid-template-columns:1fr 310px;gap:12px">
+
+    <!-- Sector Volume KPI Cards -->
+    <div style="margin-bottom:6px;display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <span style="font-size:12.5px;font-weight:600">Volume by Sector</span>
+        <span style="font-size:11px;color:var(--sub);margin-left:10px">Average daily trading volume &middot; from notebook Trading Volume Patterns analysis</span>
+      </div>
+      <span style="font-size:10px;color:var(--sub)">Energy leads &rsaquo; Healthcare lowest</span>
+    </div>
+    <div class="kpi-grid">${kpiCards || '<div style="color:var(--sub);padding:20px">Loading volume data&hellip;</div>'}</div>
+
+    <!-- Most Active + Sector Returns -->
+    <div style="display:grid;grid-template-columns:1fr 310px;gap:12px;margin-top:4px">
       <div class="card">
         <div class="card-header">
           <h2>Most Active</h2>
-          <span class="link" onclick="navigate('markets')">View all ›</span>
+          <span class="link" onclick="navigate('markets')">View all &rsaquo;</span>
         </div>
         <div class="table-wrap">
           <table>
@@ -521,7 +600,7 @@ async function renderDashboard() {
     </div>`;
 }
 
-// ─── MARKETS ─────────────────────────────────────────────────────────────────
+
 async function renderMarkets() {
   const params = new URLSearchParams({
     sort_by: S.sortBy, order: S.sortDir, limit: 50,
