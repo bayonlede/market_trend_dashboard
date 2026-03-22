@@ -208,7 +208,7 @@ input[type=range]{position:absolute;inset:0;width:100%;opacity:0;cursor:pointer;
 
 <script>
 // ─── CONFIG ──────────────────────────────────────────────────────────────────
-const API = window.API_BASE_URL || '';   // Nginx proxies /api → backend
+const API = window.BACKEND_URL || '';
 
 // ─── STATE ───────────────────────────────────────────────────────────────────
 const S = {
@@ -279,17 +279,41 @@ function mkChart(id, cfg) {
   return c;
 }
 
-// ─── API ─────────────────────────────────────────────────────────────────────
+// --- API ---
 async function apiFetch(path, opts = {}) {
   try {
     const r = await fetch(API + path, opts);
-    if (!r.ok) throw new Error(r.status);
+    if (!r.ok) {
+      console.error('API HTTP error:', r.status, 'for', path);
+      showApiError(r.status);
+      return null;
+    }
     return await r.json();
   } catch (e) {
-    console.warn('API error:', path, e);
+    console.error('API fetch failed for', path, ':', e.message);
+    showApiError('Network error - check BACKEND_URL');
     return null;
   }
 }
+
+let _apiErrorShown = false;
+function showApiError(detail) {
+  if (_apiErrorShown) return;
+  _apiErrorShown = true;
+  const mc = document.getElementById('main-content');
+  if (!mc) return;
+  mc.innerHTML = `
+    <div style="padding:40px;text-align:center;color:#8899BB">
+      <div style="font-size:48px;margin-bottom:16px">⚡</div>
+      <h2 style="color:#E8EBF0;margin-bottom:8px">Cannot reach the API</h2>
+      <p style="margin-bottom:8px">Make sure the <b style="color:#00D4FF">BACKEND_URL</b> variable is set correctly in Railway.</p>
+      <p style="font-family:'DM Mono',monospace;font-size:12px;color:#FF4D6A;margin-bottom:20px">${detail}</p>
+      <p style="font-size:12px">Go to Railway → <b>quantedge-ui</b> service → Variables tab.<br>
+      Confirm <b style="color:#00D4FF">BACKEND_URL</b> = <b style="color:#00E5A0">https://your-api.up.railway.app</b></p>
+      <button onclick="location.reload()" style="margin-top:20px;padding:10px 24px;background:linear-gradient(135deg,#7B61FF,#00D4FF);color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:14px">Retry</button>
+    </div>`;
+}
+
 
 async function apiPost(path, body) {
   return apiFetch(path, {

@@ -10,7 +10,9 @@ ENV BACKEND_URL=http://localhost:8000
 
 EXPOSE 80
 
-# Use sed to replace plain-text placeholders with actual env var values.
-# This avoids the envsubst $ quoting problem entirely.
-CMD sed -i "s|NGINX_PORT|${PORT}|g; s|NGINX_BACKEND|${BACKEND_URL}|g" \
-    /etc/nginx/conf.d/default.conf && nginx -g "daemon off;"
+# Two sed operations:
+# 1. Replace NGINX_PORT placeholder in nginx.conf with the actual port
+# 2. Inject BACKEND_URL directly into index.html so the browser calls the API directly
+CMD sed -i "s|NGINX_PORT|${PORT}|g" /etc/nginx/conf.d/default.conf && \
+    sed -i "s|window.BACKEND_URL || ''|'${BACKEND_URL}'|g" /usr/share/nginx/html/index.html && \
+    nginx -g "daemon off;"
