@@ -6,30 +6,35 @@ __pycache__/
 .venv/
 venv/
 *.egg-info/
-dist/
-build/
+
+# Models — upload via Railway Volume, never commit
+models/*.pkl
+models/*.joblib
+
+# Data files
+data/*.csv
+data/*.parquet
+data/*.feather
 
 # Node
 node_modules/
 frontend/dist/
 frontend/.env
 frontend/.env.local
-
-# Models — too large for git; upload separately
-models/*.pkl
-
-# Data
-data/*.csv
-data/*.parquet
+frontend/.env.production
 
 # IDE
 .vscode/
 .idea/
 *.swp
 .DS_Store
+Thumbs.db
 
 # Docker
 .dockerignore
 
-# Railway
+# Railway CLI
 .railway/
+
+# Logs
+*.log

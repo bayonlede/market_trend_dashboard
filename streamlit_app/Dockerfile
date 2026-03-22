@@ -12,12 +12,7 @@ RUN pip install --no-cache-dir --upgrade pip \
 
 COPY . .
 
-# Railway dynamically assigns $PORT
-EXPOSE $PORT
+# Hardcoded single port — Railway reads EXPOSE at build time for health checks
+EXPOSE 8501
 
-# Use shell form so $PORT is expanded from environment
-CMD streamlit run app.py \
-    --server.port=${PORT:-8501} \
-    --server.address=0.0.0.0 \
-    --server.headless=true \
-    --browser.gatherUsageStats=false
+CMD ["sh", "-c", "streamlit run app.py --server.port=${PORT:-8501} --server.address=0.0.0.0 --server.headless=true --browser.gatherUsageStats=false"]

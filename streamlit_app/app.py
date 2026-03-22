@@ -22,7 +22,8 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-API_BASE = "http://localhost:8000"
+import os
+API_BASE = os.environ.get("API_BASE_URL", "http://localhost:8000")
 
 # ─── Custom CSS ───────────────────────────────────────────────────────────────
 st.markdown("""

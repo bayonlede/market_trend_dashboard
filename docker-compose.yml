@@ -1,45 +1,59 @@
 version: "3.9"
 
+# ── Local development only — Railway uses individual Dockerfiles per service ──
+#
+# Usage:
+#   docker-compose up --build
+#
+# Services:
+#   backend   → http://localhost:8000   (FastAPI + Swagger docs at /docs)
+#   frontend  → http://localhost:3000   (Nginx serving the SPA)
+#   streamlit → http://localhost:8501   (Streamlit dashboard)
+
 services:
-  # ─── FastAPI Backend ─────────────────────────────────────
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
     ports:
       - "8000:8000"
+    environment:
+      PORT: "8000"
+      PYTHONUNBUFFERED: "1"
     volumes:
       - ./models:/app/models:ro
-      - ./data:/app/data:ro
-    environment:
-      - PYTHONUNBUFFERED=1
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 30s
-      timeout: 10s
+      interval: 15s
+      timeout: 5s
       retries: 3
     restart: unless-stopped
 
-  # ─── React Frontend ───────────────────────────────────────
   frontend:
     build:
       context: ./frontend
       dockerfile: Dockerfile
     ports:
       - "3000:80"
+    environment:
+      PORT: "80"
+      BACKEND_URL: "http://backend:8000"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
     restart: unless-stopped
 
-  # ─── Streamlit App ────────────────────────────────────────
   streamlit:
     build:
       context: ./streamlit_app
       dockerfile: Dockerfile
     ports:
       - "8501:8501"
-    depends_on:
-      - backend
     environment:
-      - PYTHONUNBUFFERED=1
+      PORT: "8501"
+      API_BASE_URL: "http://backend:8000"
+      PYTHONUNBUFFERED: "1"
+    depends_on:
+      backend:
+        condition: service_healthy
     restart: unless-stopped
