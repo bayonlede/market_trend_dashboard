@@ -21,7 +21,7 @@ services:
       PORT: "8000"
       PYTHONUNBUFFERED: "1"
     volumes:
-      - ./backend/models:/app/models:ro
+      - ./models:/app/models:ro
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 15s
