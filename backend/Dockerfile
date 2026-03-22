@@ -12,11 +12,9 @@ RUN pip install --no-cache-dir --upgrade pip \
 
 COPY . .
 
-# Hardcode the exposed port — Railway reads EXPOSE at build time for health checks.
-# Must be a single fixed number, not a variable.
+# Railway reads EXPOSE at build time — must be hardcoded, not a variable
 EXPOSE 8000
 
-# Bind to :: (IPv6 wildcard) which also accepts IPv4 on Linux.
-# Railway's internal health checker connects over IPv6, so 0.0.0.0 alone fails.
-# PORT env var is set to 8000 in Railway Variables tab — matches EXPOSE above.
-CMD ["sh", "-c", "uvicorn main:app --host '::' --port ${PORT:-8000}"]
+# Plain shell form CMD — $PORT is injected by Railway at runtime.
+# PORT must be set to 8000 in Railway's Variables tab.
+CMD uvicorn main:app --host 0.0.0.0 --port $PORT

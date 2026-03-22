@@ -12,7 +12,9 @@ RUN pip install --no-cache-dir --upgrade pip \
 
 COPY . .
 
-# Hardcoded single port — Railway reads EXPOSE at build time for health checks
+# Railway reads EXPOSE at build time — must be hardcoded
 EXPOSE 8501
 
-CMD ["sh", "-c", "streamlit run app.py --server.port=${PORT:-8501} --server.address=0.0.0.0 --server.headless=true --browser.gatherUsageStats=false"]
+# Plain shell form — $PORT is injected by Railway at runtime.
+# PORT must be set to 8501 in Railway's Variables tab.
+CMD streamlit run app.py --server.port $PORT --server.address 0.0.0.0 --server.headless true --browser.gatherUsageStats false
