@@ -4,15 +4,14 @@ RUN rm /etc/nginx/conf.d/default.conf
 
 COPY index.html /usr/share/nginx/html/index.html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
+COPY startup.sh /startup.sh
+RUN chmod +x /startup.sh
 
 ENV PORT=80
 ENV BACKEND_URL=http://localhost:8000
 
 EXPOSE 80
 
-# Two sed operations:
-# 1. Replace NGINX_PORT placeholder in nginx.conf with the actual port
-# 2. Inject BACKEND_URL directly into index.html so the browser calls the API directly
-CMD sed -i "s|NGINX_PORT|${PORT}|g" /etc/nginx/conf.d/default.conf && \
-    sed -i "s|window.BACKEND_URL || ''|'${BACKEND_URL}'|g" /usr/share/nginx/html/index.html && \
-    nginx -g "daemon off;"
+# startup.sh replaces NGINX_PORT in nginx.conf and QUANTEDGE_API_URL in index.html,
+# then starts nginx. Using awk (not sed) so URLs with / don't break substitution.
+CMD ["/startup.sh"]
