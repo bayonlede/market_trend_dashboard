@@ -1,4 +1,4 @@
-# QuantEdge — Stock Market Intelligence Platform
+# Market Trend — Stock Market Intelligence Platform
 
 ML-powered stock dashboard with FastAPI backend, vanilla JS frontend, and Streamlit analytics app.
 
